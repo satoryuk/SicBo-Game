@@ -24,6 +24,19 @@ export default function Game() {
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
+    // Fetch current user balance from server
+    const fetchBalance = async () => {
+      try {
+        const { data } = await api.get("/api/auth/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setBalance(data.balance);
+      } catch (err) {
+        console.error("Failed to fetch balance:", err);
+      }
+    };
+    fetchBalance();
+
     socket.connect();
     socket.emit("join_room", "main");
     socket.on("roll_result", (data) => {
