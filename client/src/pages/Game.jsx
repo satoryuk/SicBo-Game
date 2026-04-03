@@ -209,16 +209,42 @@ export default function Game() {
 
         <div className="flex justify-between gap-2">
           <button
-            className="bg-transparent border border-sicbo-gold-dark text-sicbo-text-muted rounded-lg py-2 px-4 font-cinzel text-[0.7rem] tracking-wider cursor-pointer hover:bg-sicbo-gold-dark/20"
+            className="bg-transparent border border-sicbo-gold-dark text-sicbo-text-muted rounded-lg py-2 px-4 font-cinzel text-[0.7rem] tracking-wider cursor-pointer hover:bg-sicbo-gold-dark/20 flex items-center gap-1.5"
             onClick={() => navigate("/profile")}
           >
-            👤 Profile
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+            Profile
           </button>
           <button
-            className="bg-transparent border border-sicbo-gold-dark text-sicbo-text-muted rounded-lg py-2 px-4 font-cinzel text-[0.7rem] tracking-wider cursor-pointer hover:bg-sicbo-gold-dark/20"
+            className="bg-transparent border border-sicbo-gold-dark text-sicbo-text-muted rounded-lg py-2 px-4 font-cinzel text-[0.7rem] tracking-wider cursor-pointer hover:bg-sicbo-gold-dark/20 flex items-center gap-1.5"
             onClick={() => navigate("/leaderboard")}
           >
-            🏆 Leaderboard
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+              />
+            </svg>
+            Leaderboard
           </button>
           <button
             className="bg-transparent border border-red-600/40 text-red-400 rounded-lg py-2 px-4 font-cinzel text-[0.7rem] tracking-wider cursor-pointer hover:bg-red-600/20"
