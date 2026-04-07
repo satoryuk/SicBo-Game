@@ -52,7 +52,9 @@ function Face({ value, bg, shadow }) {
 
 /* ── single die (true CSS 3-D cube) ── */
 function Die({ value, rolling, index }) {
-  /* standard die adjacency (opposite faces sum to 7) */
+  /* standard die adjacency (opposite faces sum to 7)
+     For the isometric view rotateX(-30deg) rotateY(45deg) we see: top, front, right.
+     We compute all 6 faces so the cube is complete. */
   const adj = {
     1: { front: 2, right: 3 },
     2: { front: 1, right: 3 },
@@ -65,6 +67,23 @@ function Die({ value, rolling, index }) {
   const S = 82;           // face size px
   const H = S / 2;        // half = translateZ offset
   const f = adj[value] || { front: 2, right: 3 };
+
+  /* Compute all 6 face values (opposite faces sum to 7) */
+  const top    = value;
+  const bottom = 7 - value;
+  const front  = f.front;
+  const back   = 7 - f.front;
+  const right  = f.right;
+  const left   = 7 - f.right;
+
+  /* shared style for every face — backface-visibility prevents overlap glitches */
+  const faceWrap = (transform) => ({
+    position: "absolute", width: S, height: S,
+    transform,
+    transformStyle: "preserve-3d",
+    backfaceVisibility: "hidden",
+    WebkitBackfaceVisibility: "hidden",
+  });
 
   /* isometric-ish resting angle */
   const restTransform = `rotateX(-30deg) rotateY(45deg)`;
@@ -85,64 +104,58 @@ function Die({ value, rolling, index }) {
         }}
       >
         {/* TOP — the "value" face */}
-        <div style={{
-          position: "absolute", width: S, height: S,
-          transform: `rotateX(90deg) translateZ(${H}px)`,
-          transformStyle: "preserve-3d",
-        }}>
+        <div style={faceWrap(`rotateX(90deg) translateZ(${H}px)`)}>
           <Face
-            value={value}
+            value={top}
             bg="linear-gradient(135deg, #fefefe, #ececec)"
             shadow="inset 0 0 12px rgba(255,255,255,0.5)"
           />
         </div>
 
         {/* FRONT */}
-        <div style={{
-          position: "absolute", width: S, height: S,
-          transform: `translateZ(${H}px)`,
-          transformStyle: "preserve-3d",
-        }}>
+        <div style={faceWrap(`translateZ(${H}px)`)}>
           <Face
-            value={f.front}
+            value={front}
             bg="linear-gradient(180deg, #e6e6e6, #c9c9c9)"
             shadow="inset 0 -6px 14px rgba(0,0,0,0.08)"
           />
         </div>
 
         {/* RIGHT */}
-        <div style={{
-          position: "absolute", width: S, height: S,
-          transform: `rotateY(90deg) translateZ(${H}px)`,
-          transformStyle: "preserve-3d",
-        }}>
+        <div style={faceWrap(`rotateY(90deg) translateZ(${H}px)`)}>
           <Face
-            value={f.right}
+            value={right}
             bg="linear-gradient(90deg, #d4d4d4, #aaaaaa)"
             shadow="inset -6px 0 14px rgba(0,0,0,0.1)"
           />
         </div>
 
         {/* BACK */}
-        <div style={{
-          position: "absolute", width: S, height: S,
-          transform: `rotateY(180deg) translateZ(${H}px)`,
-          background: "#b8b8b8", borderRadius: 8,
-        }} />
+        <div style={faceWrap(`rotateY(180deg) translateZ(${H}px)`)}>
+          <Face
+            value={back}
+            bg="linear-gradient(180deg, #c9c9c9, #b0b0b0)"
+            shadow="inset 0 6px 14px rgba(0,0,0,0.08)"
+          />
+        </div>
 
         {/* LEFT */}
-        <div style={{
-          position: "absolute", width: S, height: S,
-          transform: `rotateY(-90deg) translateZ(${H}px)`,
-          background: "#c0c0c0", borderRadius: 8,
-        }} />
+        <div style={faceWrap(`rotateY(-90deg) translateZ(${H}px)`)}>
+          <Face
+            value={left}
+            bg="linear-gradient(90deg, #aaaaaa, #c0c0c0)"
+            shadow="inset 6px 0 14px rgba(0,0,0,0.1)"
+          />
+        </div>
 
         {/* BOTTOM */}
-        <div style={{
-          position: "absolute", width: S, height: S,
-          transform: `rotateX(-90deg) translateZ(${H}px)`,
-          background: "#b8b8b8", borderRadius: 8,
-        }} />
+        <div style={faceWrap(`rotateX(-90deg) translateZ(${H}px)`)}>
+          <Face
+            value={bottom}
+            bg="linear-gradient(135deg, #c0c0c0, #a8a8a8)"
+            shadow="inset 0 0 12px rgba(0,0,0,0.15)"
+          />
+        </div>
       </div>
     </div>
   );
