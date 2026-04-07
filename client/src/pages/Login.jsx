@@ -8,6 +8,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [bonus, setBonus] = useState(null);
   const navigate = useNavigate();
 
   const handleSubmit = async () => {
@@ -21,7 +22,18 @@ export default function Login() {
       });
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      window.location.href = "/game";
+
+      // Admins go to admin dashboard, players go to game
+      const dest = data.user.role === "admin" ? "/admin" : "/game";
+
+      if (data.bonusGranted && data.user.role !== "admin") {
+        setBonus({ coins: data.bonusCoins, day: data.streakDay });
+        setTimeout(() => {
+          window.location.href = dest;
+        }, 2500);
+      } else {
+        window.location.href = dest;
+      }
     } catch (err) {
       console.error("Login error:", err.response?.data);
       setError(err.response?.data?.message || "Something went wrong");
@@ -35,37 +47,58 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-sicbo-dark bg-gradient-to-b from-sicbo-gold/5 to-transparent flex items-center justify-center p-5 font-cinzel">
-      <div className="bg-gradient-to-br from-sicbo-green-dark to-sicbo-green border-2 border-sicbo-gold-dark rounded-3xl p-10 w-full max-w-sm text-center shadow-[0_0_40px_rgba(201,168,76,0.2)]">
-        <div className="flex justify-start mb-4">
+      {/* Daily Bonus Popup */}
+      {bonus && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[9999] animate-fadeIn">
+          <div className="bg-gradient-to-br from-[#0b2a1a] to-[#0e3522] border-2 border-sicbo-gold rounded-3xl p-12 text-center shadow-[0_0_80px_rgba(201,168,76,0.5)] font-cinzel animate-fadeIn">
+            <div className="text-6xl mb-4 animate-bounce">🎁</div>
+            <div className="text-sicbo-gold text-xl font-black tracking-[0.2em] mb-3">
+              DAILY BONUS!
+            </div>
+            <div className="text-[#f5e6c8] text-4xl font-black my-4 animate-pulse">
+              +{bonus.coins} 🪙
+            </div>
+            <div className="text-sicbo-text-muted text-sm tracking-[0.15em]">
+              🔥 Day {bonus.day} Login Streak
+            </div>
+            <div className="text-sicbo-text-muted text-xs mt-4 opacity-70">
+              Redirecting to game...
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="bg-gradient-to-br from-sicbo-green-dark/90 to-sicbo-green/80 backdrop-blur-md border-2 border-sicbo-gold-dark rounded-3xl p-10 w-full max-w-md text-center shadow-[0_8px_48px_rgba(201,168,76,0.3)] transition-all duration-300 hover:shadow-[0_12px_60px_rgba(201,168,76,0.4)] animate-fadeIn">
+        <div className="flex justify-start mb-5">
           <button
-            className="bg-transparent border-none text-sicbo-gold-dark font-cinzel text-[0.6rem] tracking-wider cursor-pointer hover:text-sicbo-gold"
+            className="bg-transparent border-none text-sicbo-gold-dark font-cinzel text-[0.65rem] tracking-wider cursor-pointer hover:text-sicbo-gold transition-all duration-300 hover:translate-x-[-4px]"
             onClick={() => navigate("/")}
           >
             ← back to demo
           </button>
         </div>
-        <h1 className="text-5xl font-black text-sicbo-gold tracking-[0.15em] [text-shadow:0_0_30px_rgba(201,168,76,0.5)] m-0">
+        <h1 className="text-6xl font-black text-sicbo-gold tracking-[0.15em] [text-shadow:0_0_40px_rgba(201,168,76,0.6)] m-0 mb-2 transition-all duration-300 hover:scale-105">
           SIC BO
         </h1>
-        <div className="font-noto text-sm text-sicbo-text-muted tracking-[0.3em] mt-1.5">
+        <div className="font-noto text-base text-sicbo-text-muted tracking-[0.3em] mt-2">
           骰寶 · DICE TREASURE
         </div>
-        <div className="w-40 h-px bg-gradient-to-r from-transparent via-sicbo-gold to-transparent mx-auto my-3" />
+        <div className="w-48 h-px bg-gradient-to-r from-transparent via-sicbo-gold to-transparent mx-auto my-4" />
 
-        <h2 className="text-xs tracking-[0.25em] text-sicbo-text-muted mb-5 font-normal">
-          welcome back
+        <h2 className="text-xs tracking-[0.25em] text-sicbo-gold/70 mb-6 font-semibold">
+          WELCOME BACK
         </h2>
 
         {error && (
-          <div className="bg-red-900/15 border border-red-700 text-red-400 rounded-lg px-3.5 py-2 text-xs mb-3.5 tracking-wider">
+          <div className="bg-red-900/20 border-2 border-red-700/60 text-red-400 rounded-lg px-4 py-3 text-xs mb-4 tracking-wider animate-fadeIn shadow-[0_4px_16px_rgba(192,57,43,0.3)]">
             {error}
           </div>
         )}
 
-        <div className="relative mb-3">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sicbo-gold-dark">
+        <div className="relative mb-4">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sicbo-gold-dark transition-colors duration-300">
             <svg
-              className="w-4 h-4"
+              className="w-5 h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -79,7 +112,7 @@ export default function Login() {
             </svg>
           </div>
           <input
-            className="w-full pl-11 pr-4 py-3 bg-black/40 border border-sicbo-gold-dark rounded-lg text-sicbo-text font-cinzel text-sm tracking-wider outline-none lowercase focus:border-sicbo-gold"
+            className="w-full pl-12 pr-4 py-3.5 bg-black/50 border-2 border-sicbo-gold-dark/50 rounded-lg text-sicbo-text font-cinzel text-sm tracking-wider outline-none lowercase focus:border-sicbo-gold focus:bg-black/60 transition-all duration-300 shadow-inner"
             placeholder="username"
             value={username}
             onChange={(e) => setUsername(e.target.value.toLowerCase())}
@@ -88,10 +121,10 @@ export default function Login() {
             autoCorrect="off"
           />
         </div>
-        <div className="relative mb-3">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sicbo-gold-dark">
+        <div className="relative mb-4">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sicbo-gold-dark transition-colors duration-300">
             <svg
-              className="w-4 h-4"
+              className="w-5 h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -105,7 +138,7 @@ export default function Login() {
             </svg>
           </div>
           <input
-            className="w-full pl-11 pr-12 py-3 bg-black/40 border border-sicbo-gold-dark rounded-lg text-sicbo-text font-cinzel text-sm tracking-wider outline-none focus:border-sicbo-gold"
+            className="w-full pl-12 pr-12 py-3.5 bg-black/50 border-2 border-sicbo-gold-dark/50 rounded-lg text-sicbo-text font-cinzel text-sm tracking-wider outline-none focus:border-sicbo-gold focus:bg-black/60 transition-all duration-300 shadow-inner"
             placeholder="password"
             type={showPassword ? "text" : "password"}
             value={password}
@@ -114,12 +147,12 @@ export default function Login() {
           />
           <button
             type="button"
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-sicbo-gold-dark hover:text-sicbo-gold cursor-pointer bg-transparent border-none p-0"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-sicbo-gold-dark hover:text-sicbo-gold cursor-pointer bg-transparent border-none p-0 transition-all duration-300"
             onClick={() => setShowPassword(!showPassword)}
           >
             {showPassword ? (
               <svg
-                className="w-4 h-4"
+                className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -133,7 +166,7 @@ export default function Login() {
               </svg>
             ) : (
               <svg
-                className="w-4 h-4"
+                className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -156,15 +189,15 @@ export default function Login() {
         </div>
 
         <button
-          className="w-full py-3.5 mt-2 bg-gradient-to-r from-sicbo-gold-dark via-sicbo-gold to-sicbo-gold-dark border-none rounded-xl text-sicbo-dark font-cinzel text-sm font-black tracking-[0.2em] cursor-pointer shadow-[0_4px_20px_rgba(201,168,76,0.4)] disabled:opacity-50"
+          className="w-full py-4 mt-3 bg-gradient-to-r from-sicbo-gold-dark via-sicbo-gold to-sicbo-gold-dark border-none rounded-xl text-sicbo-dark font-cinzel text-sm font-black tracking-[0.2em] cursor-pointer shadow-[0_6px_24px_rgba(201,168,76,0.5)] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-[0_8px_32px_rgba(201,168,76,0.7)] hover:scale-[1.02] active:scale-[0.98]"
           onClick={handleSubmit}
           disabled={loading}
         >
-          {loading ? "logging in..." : "login"}
+          {loading ? "LOGGING IN..." : "LOGIN"}
         </button>
 
         <button
-          className="mt-4 bg-transparent border-none text-sicbo-text-muted font-cinzel text-[0.65rem] tracking-wider cursor-pointer underline"
+          className="mt-5 bg-transparent border-none text-sicbo-text-muted font-cinzel text-[0.7rem] tracking-wider cursor-pointer underline hover:text-sicbo-gold transition-all duration-300"
           onClick={() => navigate("/signup")}
         >
           don't have an account? sign up

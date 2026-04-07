@@ -5,17 +5,19 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: cd server && npm install
-    startCommand: cd server && npm start
+    buildCommand: npm install
+    startCommand: npm start
+    rootDir: server
     envVars:
       - key: NODE_ENV
         value: production
-      - key: MONGO_URI
+      - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
         sync: false
       - key: CLIENT_URL
         sync: false
+    healthCheckPath: /health
 
   # Frontend Static Site
   - type: web
@@ -23,8 +25,9 @@ services:
     env: static
     region: oregon
     plan: free
-    buildCommand: cd client && npm install && npm run build
-    staticPublishPath: ./client/build
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
+    rootDir: client
     envVars:
       - key: REACT_APP_API_URL
         sync: false

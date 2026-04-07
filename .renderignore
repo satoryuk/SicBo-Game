@@ -1,0 +1,25 @@
+# Files to ignore during Render deployment
+
+# Documentation
+*.md
+!README.md
+
+# Development files
+.vscode/
+.git/
+
+# Environment examples
+*.example
+
+# Local environment files
+.env.local
+.env.development
+.env.test
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
