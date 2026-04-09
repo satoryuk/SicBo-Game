@@ -9,7 +9,6 @@ import PlayerLayout from "./components/PlayerLayout";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import Leaderboard from "./pages/Leaderboard";
 
 // Player pages
 import Game from "./pages/Game";
@@ -26,6 +25,7 @@ import AdminWithdrawals from "./pages/admin/Withdrawals";
 import AdminRounds from "./pages/admin/Rounds";
 import AdminSettings from "./pages/admin/Settings";
 import AdminSuspicious from "./pages/admin/Suspicious";
+import Leaderboard from "./pages/Leaderboard";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const getToken = () => localStorage.getItem("token");
@@ -96,7 +96,6 @@ function App() {
           <Route path="/game" element={<Game />} />
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
         </Route>
 
         {/* /admin/login → redirect to shared /login */}
@@ -117,6 +116,7 @@ function App() {
           <Route path="/admin/logs" element={<AdminLogs />} />
           <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
           <Route path="/admin/rounds" element={<AdminRounds />} />
+          <Route path="/admin/leaderboard" element={<Leaderboard />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
           <Route path="/admin/suspicious" element={<AdminSuspicious />} />
         </Route>

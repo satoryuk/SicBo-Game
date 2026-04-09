@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
+import api from "../api";
 
 const AuthContext = createContext();
 
@@ -27,15 +28,27 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
-  const login = (newToken) => {
+  const login = (newToken, newRefreshToken) => {
     localStorage.setItem("token", newToken);
+    if (newRefreshToken) {
+      localStorage.setItem("refreshToken", newRefreshToken);
+    }
     setToken(newToken);
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
-    setUser(null);
+  const logout = async () => {
+    try {
+      // Call logout endpoint to invalidate refresh token
+      await api.post("/api/auth/logout");
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      setToken(null);
+      setUser(null);
+    }
   };
 
   return (

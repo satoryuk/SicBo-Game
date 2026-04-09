@@ -1,8 +1,25 @@
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import DiceTray from "../components/DiceTray";
 import BetPanel from "../components/BetPanel";
 import BalanceBar from "../components/BalanceBar";
+
+const PAYOUT_TABLE = {
+  4: 50,
+  5: 18,
+  6: 14,
+  7: 12,
+  8: 8,
+  9: 6,
+  10: 6,
+  11: 6,
+  12: 6,
+  13: 8,
+  14: 12,
+  15: 14,
+  16: 18,
+  17: 50,
+};
 
 export default function Home() {
   const navigate = useNavigate();
@@ -18,7 +35,7 @@ export default function Home() {
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
 
-  const roll = () => {
+  const roll = useCallback(() => {
     if (!betValue) return setResult({ error: "Choose a bet type first!" });
     if (betAmount <= 0) return setResult({ error: "Add chips to bet!" });
     if (betAmount > balance)
@@ -56,23 +73,7 @@ export default function Home() {
       } else if (betType === "total") {
         if (sum === betValue) {
           won = true;
-          const payouts = {
-            4: 50,
-            5: 18,
-            6: 14,
-            7: 12,
-            8: 8,
-            9: 6,
-            10: 6,
-            11: 6,
-            12: 6,
-            13: 8,
-            14: 12,
-            15: 14,
-            16: 18,
-            17: 50,
-          };
-          payout = betAmount * (payouts[betValue] || 6);
+          payout = betAmount * (PAYOUT_TABLE[betValue] || 6);
         }
       }
 
@@ -88,7 +89,7 @@ export default function Home() {
       setHistory((prev) => [won ? "win" : "lose", ...prev].slice(0, 12));
       setRolling(false);
     }, 1500);
-  };
+  }, [betValue, betAmount, balance, betType]);
 
   return (
     <div className="min-h-screen bg-sicbo-dark bg-gradient-to-b from-sicbo-gold/5 to-transparent font-cinzel text-sicbo-text flex flex-col items-center py-8 px-4 pb-16">
@@ -189,15 +190,6 @@ export default function Home() {
               Login
             </button>
           </div>
-        </div>
-
-        <div className="flex justify-center">
-          <button
-            className="bg-transparent border-2 border-sicbo-gold-dark/60 text-sicbo-text-muted rounded-lg py-2.5 px-5 font-cinzel text-[0.7rem] tracking-wider cursor-pointer hover:bg-sicbo-gold-dark/30 hover:border-sicbo-gold hover:text-sicbo-gold transition-all duration-300 hover:scale-105 active:scale-95"
-            onClick={() => navigate("/leaderboard")}
-          >
-            🏆 View Leaderboard
-          </button>
         </div>
       </div>
     </div>

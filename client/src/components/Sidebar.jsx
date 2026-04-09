@@ -18,6 +18,7 @@ export default function Sidebar() {
         { path: "/admin/withdrawals", label: "Withdrawals", icon: "💸" },
         { path: "/admin/rounds", label: "Bets Log", icon: "🎲" },
         { path: "/admin/transactions", label: "Transactions", icon: "💳" },
+        { path: "/admin/leaderboard", label: "Leaderboard", icon: "🏆" },
         { path: "/admin/suspicious", label: "Suspicious", icon: "🚨" },
         { path: "/admin/settings", label: "Settings", icon: "⚙️" },
         { path: "/admin/logs", label: "Logs", icon: "📋" },
@@ -25,7 +26,6 @@ export default function Sidebar() {
     : [
         { path: "/game", label: "Play", icon: "🎲" },
         { path: "/wallet", label: "Wallet", icon: "💰" },
-        { path: "/leaderboard", label: "Leaderboard", icon: "🏆" },
         { path: "/profile", label: "Profile", icon: "👤" },
       ];
 
@@ -37,9 +37,9 @@ export default function Sidebar() {
         onClick={() => navigate(isAdmin ? "/admin" : "/game")}
       >
         <img
-          src={`${process.env.PUBLIC_URL}/scibologo.jpg`}
+          src={`${process.env.PUBLIC_URL}/logo_removebg.png`}
           alt="SIC BO"
-          className="w-20 h-20 object-contain"
+          className="w-20 h-auto object-contain"
         />
       </div>
 

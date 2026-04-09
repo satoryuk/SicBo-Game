@@ -1,4 +1,3 @@
-import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function NavBar() {
@@ -19,6 +18,7 @@ export default function NavBar() {
         { path: "/admin/withdrawals", label: "💸 Withdrawals" },
         { path: "/admin/rounds", label: "🎲 Bets Log" },
         { path: "/admin/transactions", label: "💳 Transactions" },
+        { path: "/admin/leaderboard", label: "🏆 Leaderboard" },
         { path: "/admin/suspicious", label: "🚨 Suspicious" },
         { path: "/admin/settings", label: "⚙️ Settings" },
         { path: "/admin/logs", label: "📋 Logs" },
@@ -26,7 +26,6 @@ export default function NavBar() {
     : [
         { path: "/game", label: "🎲 Play" },
         { path: "/wallet", label: "💰 Wallet" },
-        { path: "/leaderboard", label: "🏆 Leaderboard" },
         { path: "/profile", label: "👤 Profile" },
       ];
 

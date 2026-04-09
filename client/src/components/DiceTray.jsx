@@ -1,4 +1,9 @@
-import React from "react";
+import PropTypes from "prop-types";
+
+/* ── constants ── */
+const DIE_SIZE = 82;
+const DIE_HALF = DIE_SIZE / 2;
+const PERSPECTIVE = 600;
 
 /* ── pip positions on a 3×3 grid (indices 0-8) ── */
 const PIPS = {
@@ -64,25 +69,25 @@ function Die({ value, rolling, index }) {
     6: { front: 5, right: 4 },
   };
 
-  const S = 82;           // face size px
-  const H = S / 2;        // half = translateZ offset
+  const S = DIE_SIZE;
+  const H = DIE_HALF;
   const f = adj[value] || { front: 2, right: 3 };
 
   /* Compute all 6 face values (opposite faces sum to 7) */
-  const top    = value;
+  const top = value;
   const bottom = 7 - value;
-  const front  = f.front;
-  const back   = 7 - f.front;
-  const right  = f.right;
-  const left   = 7 - f.right;
+  const front = f.front;
+  const back = 7 - f.front;
+  const right = f.right;
+  const left = 7 - f.right;
 
-  /* shared style for every face — backface-visibility prevents overlap glitches */
+  /* shared style for every face */
   const faceWrap = (transform) => ({
-    position: "absolute", width: S, height: S,
+    position: "absolute",
+    width: S,
+    height: S,
     transform,
     transformStyle: "preserve-3d",
-    backfaceVisibility: "hidden",
-    WebkitBackfaceVisibility: "hidden",
   });
 
   /* isometric-ish resting angle */
@@ -90,7 +95,16 @@ function Die({ value, rolling, index }) {
 
   return (
     /* outer wrapper — gives the component a fixed box in the flow */
-    <div className={rolling ? "" : "dice-idle"} style={{ width: S + 30, height: S + 30, display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div
+      className={rolling ? "" : "dice-idle"}
+      style={{
+        width: S + 30,
+        height: S + 30,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       {/* cube pivot — must carry preserve-3d */}
       <div
         className={rolling ? `dice-roll-${index}` : ""}
@@ -163,9 +177,11 @@ function Die({ value, rolling, index }) {
 
 /* ── tray ── */
 export default function DiceTray({ dice, rolling, total }) {
+  const validDice = Array.isArray(dice) ? dice : [1, 1, 1];
+  const displayTotal = total ?? validDice.reduce((sum, val) => sum + val, 0);
+
   return (
     <div className="bg-gradient-to-br from-sicbo-green-dark/80 to-sicbo-green/60 border-2 border-sicbo-gold-dark/50 rounded-2xl py-8 px-5 text-center relative shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-
       {/* ── keyframe CSS ── */}
       <style>{`
         /* resting glow */
@@ -179,43 +195,63 @@ export default function DiceTray({ dice, rolling, total }) {
           50%     { filter: drop-shadow(0 12px 26px rgba(0,0,0,0.7))  drop-shadow(0 0 34px rgba(201,168,76,0.4)); }
         }
 
-        /* rolling animations — each die has unique timing */
-        .dice-roll-0 { animation: droll0 2.2s cubic-bezier(.33,.1,.3,1) forwards; transform-style:preserve-3d; }
-        .dice-roll-1 { animation: droll1 2.3s cubic-bezier(.33,.1,.3,1) forwards; transform-style:preserve-3d; }
-        .dice-roll-2 { animation: droll2 2.4s cubic-bezier(.33,.1,.3,1) forwards; transform-style:preserve-3d; }
+        /* rolling animations — each die has unique path, timing, rate */
+        .dice-roll-0 {
+          animation: droll0 2.2s cubic-bezier(.22,.61,.36,1) forwards;
+          transform-style: preserve-3d;
+        }
+        .dice-roll-1 {
+          animation: droll1 2.35s cubic-bezier(.22,.61,.36,1) 0.06s forwards;
+          transform-style: preserve-3d;
+        }
+        .dice-roll-2 {
+          animation: droll2 2.5s cubic-bezier(.22,.61,.36,1) 0.12s forwards;
+          transform-style: preserve-3d;
+        }
 
+        /* die 0 — fast tumble, heavy X-axis spin */
         @keyframes droll0 {
-          0%   { transform: rotateX(-30deg)  rotateY(45deg)   rotateZ(0deg)   translateY(0);     }
-          8%   { transform: rotateX(120deg)  rotateY(200deg)  rotateZ(80deg)  translateY(-65px) scale(1.18); }
-          20%  { transform: rotateX(300deg)  rotateY(400deg)  rotateZ(170deg) translateY(-50px) scale(.96);  }
-          35%  { transform: rotateX(540deg)  rotateY(600deg)  rotateZ(280deg) translateY(-58px) scale(1.12); }
-          50%  { transform: rotateX(780deg)  rotateY(820deg)  rotateZ(400deg) translateY(-45px) scale(1.06); }
-          65%  { transform: rotateX(1020deg) rotateY(1060deg) rotateZ(520deg) translateY(-35px) scale(1);    }
-          80%  { transform: rotateX(1220deg) rotateY(1260deg) rotateZ(620deg) translateY(-18px) scale(1);    }
-          92%  { transform: rotateX(1350deg) rotateY(1400deg) rotateZ(700deg) translateY(-6px)  scale(1);    }
-          100% { transform: rotateX(-30deg)  rotateY(45deg)   rotateZ(0deg)   translateY(0)     scale(1);    }
+          0%   { transform: rotateX(-30deg)  rotateY(45deg)  translateY(0)     scale(1);    }
+          6%   { transform: rotateX(80deg)   rotateY(130deg) translateY(-55px) scale(1.12); }
+          14%  { transform: rotateX(220deg)  rotateY(280deg) translateY(-40px) scale(0.97); }
+          24%  { transform: rotateX(400deg)  rotateY(460deg) translateY(-68px) scale(1.15); }
+          36%  { transform: rotateX(620deg)  rotateY(650deg) translateY(-50px) scale(1.05); }
+          50%  { transform: rotateX(840deg)  rotateY(830deg) translateY(-60px) scale(1.08); }
+          64%  { transform: rotateX(1020deg) rotateY(990deg) translateY(-40px) scale(1.02); }
+          76%  { transform: rotateX(1150deg) rotateY(1100deg) translateY(-22px) scale(1);   }
+          86%  { transform: rotateX(1250deg) rotateY(1180deg) translateY(-10px) scale(1);   }
+          94%  { transform: rotateX(1310deg) rotateY(1230deg) translateY(-3px)  scale(1);   }
+          100% { transform: rotateX(-30deg)  rotateY(45deg)  translateY(0)     scale(1);    }
         }
+
+        /* die 1 — wider arc, heavy Y-axis spin */
         @keyframes droll1 {
-          0%   { transform: rotateX(-30deg)  rotateY(45deg)   rotateZ(0deg)   translateY(0);     }
-          10%  { transform: rotateX(150deg)  rotateY(170deg)  rotateZ(100deg) translateY(-60px) scale(1.2);  }
-          22%  { transform: rotateX(340deg)  rotateY(370deg)  rotateZ(200deg) translateY(-55px) scale(.94);  }
-          36%  { transform: rotateX(560deg)  rotateY(580deg)  rotateZ(310deg) translateY(-62px) scale(1.1);  }
-          50%  { transform: rotateX(800deg)  rotateY(840deg)  rotateZ(430deg) translateY(-48px) scale(1.04); }
-          65%  { transform: rotateX(1050deg) rotateY(1100deg) rotateZ(560deg) translateY(-32px) scale(1);    }
-          80%  { transform: rotateX(1260deg) rotateY(1300deg) rotateZ(670deg) translateY(-14px) scale(1);    }
-          92%  { transform: rotateX(1380deg) rotateY(1420deg) rotateZ(740deg) translateY(-4px)  scale(1);    }
-          100% { transform: rotateX(-30deg)  rotateY(45deg)   rotateZ(0deg)   translateY(0)     scale(1);    }
+          0%   { transform: rotateX(-30deg)  rotateY(45deg)   translateY(0)     scale(1);    }
+          7%   { transform: rotateX(110deg)  rotateY(190deg)  translateY(-62px) scale(1.18); }
+          16%  { transform: rotateX(260deg)  rotateY(380deg)  translateY(-45px) scale(0.94); }
+          27%  { transform: rotateX(440deg)  rotateY(590deg)  translateY(-72px) scale(1.13); }
+          40%  { transform: rotateX(650deg)  rotateY(800deg)  translateY(-55px) scale(1.06); }
+          53%  { transform: rotateX(860deg)  rotateY(1000deg) translateY(-62px) scale(1.04); }
+          66%  { transform: rotateX(1030deg) rotateY(1160deg) translateY(-38px) scale(1.01); }
+          78%  { transform: rotateX(1160deg) rotateY(1290deg) translateY(-18px) scale(1);    }
+          88%  { transform: rotateX(1250deg) rotateY(1370deg) translateY(-7px)  scale(1);    }
+          95%  { transform: rotateX(1300deg) rotateY(1410deg) translateY(-2px)  scale(1);    }
+          100% { transform: rotateX(-30deg)  rotateY(45deg)   translateY(0)     scale(1);    }
         }
+
+        /* die 2 — highest toss, balanced spin */
         @keyframes droll2 {
-          0%   { transform: rotateX(-30deg)  rotateY(45deg)   rotateZ(0deg)   translateY(0);     }
-          12%  { transform: rotateX(180deg)  rotateY(140deg)  rotateZ(130deg) translateY(-72px) scale(1.22); }
-          24%  { transform: rotateX(380deg)  rotateY(330deg)  rotateZ(240deg) translateY(-58px) scale(.93);  }
-          38%  { transform: rotateX(600deg)  rotateY(550deg)  rotateZ(350deg) translateY(-64px) scale(1.14); }
-          52%  { transform: rotateX(850deg)  rotateY(800deg)  rotateZ(470deg) translateY(-50px) scale(1.06); }
-          66%  { transform: rotateX(1100deg) rotateY(1060deg) rotateZ(590deg) translateY(-36px) scale(1);    }
-          80%  { transform: rotateX(1300deg) rotateY(1260deg) rotateZ(700deg) translateY(-20px) scale(1);    }
-          92%  { transform: rotateX(1420deg) rotateY(1380deg) rotateZ(780deg) translateY(-6px)  scale(1);    }
-          100% { transform: rotateX(-30deg)  rotateY(45deg)   rotateZ(0deg)   translateY(0)     scale(1);    }
+          0%   { transform: rotateX(-30deg)  rotateY(45deg)   translateY(0)     scale(1);    }
+          8%   { transform: rotateX(140deg)  rotateY(160deg)  translateY(-78px) scale(1.22); }
+          18%  { transform: rotateX(310deg)  rotateY(340deg)  translateY(-55px) scale(0.93); }
+          30%  { transform: rotateX(520deg)  rotateY(540deg)  translateY(-80px) scale(1.16); }
+          42%  { transform: rotateX(720deg)  rotateY(730deg)  translateY(-60px) scale(1.08); }
+          55%  { transform: rotateX(900deg)  rotateY(910deg)  translateY(-65px) scale(1.04); }
+          67%  { transform: rotateX(1060deg) rotateY(1070deg) translateY(-42px) scale(1.01); }
+          78%  { transform: rotateX(1180deg) rotateY(1190deg) translateY(-20px) scale(1);    }
+          88%  { transform: rotateX(1270deg) rotateY(1270deg) translateY(-8px)  scale(1);    }
+          95%  { transform: rotateX(1320deg) rotateY(1310deg) translateY(-2px)  scale(1);    }
+          100% { transform: rotateX(-30deg)  rotateY(45deg)   translateY(0)     scale(1);    }
         }
       `}</style>
 
@@ -230,24 +266,41 @@ export default function DiceTray({ dice, rolling, total }) {
           justifyContent: "center",
           alignItems: "center",
           gap: 36,
-          perspective: 600,
+          perspective: PERSPECTIVE,
           perspectiveOrigin: "50% 40%",
           transformStyle: "preserve-3d",
           minHeight: 140,
           padding: "20px 0 10px",
         }}
+        role="img"
+        aria-label={`Dice showing ${validDice.join(", ")}`}
       >
-        {dice.map((v, i) => (
+        {validDice.map((v, i) => (
           <Die key={i} value={v} rolling={rolling} index={i} />
         ))}
       </div>
 
       <div className="text-xs text-sicbo-text-muted tracking-[0.15em]">
         Total:{" "}
-        <span className="text-[#f0d080] text-2xl font-bold ml-2 inline-block min-w-[3rem] transition-all duration-300">
-          {total ?? "—"}
+        <span
+          className="text-[#f0d080] text-2xl font-bold ml-2 inline-block min-w-[3rem] transition-all duration-300"
+          aria-live="polite"
+        >
+          {displayTotal}
         </span>
       </div>
     </div>
   );
 }
+
+DiceTray.propTypes = {
+  dice: PropTypes.arrayOf(PropTypes.oneOf([1, 2, 3, 4, 5, 6])),
+  rolling: PropTypes.bool,
+  total: PropTypes.number,
+};
+
+DiceTray.defaultProps = {
+  dice: [1, 1, 1],
+  rolling: false,
+  total: null,
+};

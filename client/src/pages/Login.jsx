@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import api from "../api";
 import { useNavigate } from "react-router-dom";
 
@@ -11,7 +11,7 @@ export default function Login() {
   const [bonus, setBonus] = useState(null);
   const navigate = useNavigate();
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!username || !password) return setError("Please fill in all fields");
     setLoading(true);
     setError("");
@@ -21,6 +21,7 @@ export default function Login() {
         password,
       });
       localStorage.setItem("token", data.token);
+      localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem("user", JSON.stringify(data.user));
 
       // Admins go to admin dashboard, players go to game
@@ -39,11 +40,14 @@ export default function Login() {
       setError(err.response?.data?.message || "Something went wrong");
     }
     setLoading(false);
-  };
+  }, [username, password]);
 
-  const handleKey = (e) => {
-    if (e.key === "Enter") handleSubmit();
-  };
+  const handleKey = useCallback(
+    (e) => {
+      if (e.key === "Enter") handleSubmit();
+    },
+    [handleSubmit],
+  );
 
   return (
     <div className="min-h-screen bg-sicbo-dark bg-gradient-to-b from-sicbo-gold/5 to-transparent flex items-center justify-center p-5 font-cinzel">

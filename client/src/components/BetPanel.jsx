@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo } from "react";
 
 const TOTAL_PAYOUTS = {
   4: 50,
@@ -35,10 +35,24 @@ export default function BetPanel({
   betValue,
   setBetValue,
 }) {
-  const [activeTab, setActiveTab] = useState("bigsmall");
+  const tabs = useMemo(
+    () => [
+      ["bigsmall", "Big / Small"],
+      ["number", "Single Number"],
+      ["total", "Exact Total"],
+    ],
+    [],
+  );
+
+  const bigSmallOptions = useMemo(
+    () => [
+      ["small", "SMALL", "4 – 10", "#2255aa", "#6699ff"],
+      ["big", "BIG", "11 – 17", "#7b1e14", "#ff6655"],
+    ],
+    [],
+  );
 
   const switchTab = (tab) => {
-    setActiveTab(tab);
     setBetType(tab);
     setBetValue(null);
   };
@@ -56,16 +70,12 @@ export default function BetPanel({
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-sicbo-gold-dark/30 pb-3">
-        {[
-          ["bigsmall", "Big / Small"],
-          ["number", "Single Number"],
-          ["total", "Exact Total"],
-        ].map(([key, label]) => (
+        {tabs.map(([key, label]) => (
           <button
             key={key}
             onClick={() => switchTab(key)}
             className={`flex-1 py-2.5 px-2 border rounded-lg font-cinzel text-[0.65rem] tracking-wider cursor-pointer text-center transition-all duration-300 ${
-              activeTab === key
+              betType === key
                 ? "bg-sicbo-gold/15 border-sicbo-gold text-[#f0d080] shadow-[0_0_12px_rgba(201,168,76,0.3)] scale-105"
                 : "border-sicbo-gold-dark/30 text-sicbo-text-muted hover:border-sicbo-gold-dark/60 hover:bg-sicbo-gold/5"
             }`}
@@ -76,12 +86,9 @@ export default function BetPanel({
       </div>
 
       {/* Big / Small */}
-      {activeTab === "bigsmall" && (
+      {betType === "bigsmall" && (
         <div className="grid grid-cols-2 gap-4 mb-5">
-          {[
-            ["small", "SMALL", "4 – 10", "#2255aa", "#6699ff"],
-            ["big", "BIG", "11 – 17", "#7b1e14", "#ff6655"],
-          ].map(([v, label, range, border, color]) => (
+          {bigSmallOptions.map(([v, label, range, border, color]) => (
             <div
               key={v}
               onClick={() => setBetValue(v)}
@@ -105,7 +112,7 @@ export default function BetPanel({
       )}
 
       {/* Single Number */}
-      {activeTab === "number" && (
+      {betType === "number" && (
         <div>
           <div className="grid grid-cols-6 gap-2.5 mb-3">
             {[1, 2, 3, 4, 5, 6].map((n) => (
@@ -130,7 +137,7 @@ export default function BetPanel({
       )}
 
       {/* Exact Total */}
-      {activeTab === "total" && (
+      {betType === "total" && (
         <div className="grid grid-cols-7 gap-2 mb-4">
           {Array.from({ length: 14 }, (_, i) => i + 4).map((t) => (
             <div

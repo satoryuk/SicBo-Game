@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import api from "../api";
 import { useNavigate } from "react-router-dom";
 
@@ -10,7 +10,7 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!username || !password) return setError("Please fill in all fields");
     if (password.length < 6)
       return setError("Password must be at least 6 characters");
@@ -22,6 +22,7 @@ export default function Signup() {
         password,
       });
       localStorage.setItem("token", data.token);
+      localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem("user", JSON.stringify(data.user));
       window.location.href = "/game";
     } catch (err) {
@@ -29,11 +30,14 @@ export default function Signup() {
       setError(err.response?.data?.message || "Something went wrong");
     }
     setLoading(false);
-  };
+  }, [username, password]);
 
-  const handleKey = (e) => {
-    if (e.key === "Enter") handleSubmit();
-  };
+  const handleKey = useCallback(
+    (e) => {
+      if (e.key === "Enter") handleSubmit();
+    },
+    [handleSubmit],
+  );
 
   return (
     <div className="min-h-screen bg-sicbo-dark bg-gradient-to-b from-sicbo-gold/5 to-transparent flex items-center justify-center p-5 font-cinzel">

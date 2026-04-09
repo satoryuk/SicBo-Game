@@ -1,11 +1,29 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const User = require("../models/User");
 const DailyBonus = require("../models/DailyBonus");
 const Transaction = require("../models/Transaction");
 const auth = require("../middleware/auth");
 const router = express.Router();
+
+// Generate tokens
+function generateTokens(userId, username, role) {
+  const accessToken = jwt.sign(
+    { id: userId, username, role },
+    process.env.JWT_SECRET,
+    { expiresIn: "15m" },
+  );
+
+  const refreshToken = jwt.sign(
+    { id: userId, type: "refresh" },
+    process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+    { expiresIn: "30d" },
+  );
+
+  return { accessToken, refreshToken };
+}
 
 // Coin reward per streak day (caps at day 7+)
 function streakBonus(day) {
@@ -46,13 +64,18 @@ router.post("/register", async (req, res) => {
       lastLoginDate: new Date(),
     });
 
-    const token = jwt.sign(
-      { id: user._id, username, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" },
+    const { accessToken, refreshToken } = generateTokens(
+      user._id,
+      username,
+      user.role,
     );
+
+    // Store refresh token in database
+    await User.findByIdAndUpdate(user._id, { refreshToken });
+
     res.status(201).json({
-      token,
+      token: accessToken,
+      refreshToken,
       user: {
         id: user._id,
         username,
@@ -128,14 +151,18 @@ router.post("/login", async (req, res) => {
 
     const updated = await User.findById(user._id);
 
-    const token = jwt.sign(
-      { id: user._id, username: user.username, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" },
+    const { accessToken, refreshToken } = generateTokens(
+      user._id,
+      user.username,
+      user.role,
     );
 
+    // Store refresh token in database
+    await User.findByIdAndUpdate(user._id, { refreshToken });
+
     res.json({
-      token,
+      token: accessToken,
+      refreshToken,
       user: {
         id: updated._id,
         username: updated.username,
@@ -171,6 +198,70 @@ router.get("/me", auth, async (req, res) => {
     const user = await User.findById(req.user.id).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// POST /api/auth/refresh — refresh access token
+router.post("/refresh", async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(401).json({ message: "Refresh token required" });
+    }
+
+    // Verify refresh token
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+    );
+
+    if (decoded.type !== "refresh") {
+      return res.status(401).json({ message: "Invalid token type" });
+    }
+
+    // Find user and verify refresh token matches
+    const user = await User.findById(decoded.id);
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(401).json({ message: "Invalid refresh token" });
+    }
+
+    if (user.isBanned) {
+      return res
+        .status(403)
+        .json({ message: `Account banned: ${user.bannedReason}` });
+    }
+
+    // Generate new tokens
+    const tokens = generateTokens(user._id, user.username, user.role);
+
+    // Update refresh token in database
+    await User.findByIdAndUpdate(user._id, {
+      refreshToken: tokens.refreshToken,
+    });
+
+    res.json({
+      token: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    });
+  } catch (err) {
+    if (err.name === "JsonWebTokenError" || err.name === "TokenExpiredError") {
+      return res
+        .status(401)
+        .json({ message: "Invalid or expired refresh token" });
+    }
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// POST /api/auth/logout — invalidate refresh token
+router.post("/logout", auth, async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.user.id, { refreshToken: null });
+    res.json({ message: "Logged out successfully" });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../api";
 import { useNavigate } from "react-router-dom";
 import socket from "../socket";
@@ -9,7 +9,6 @@ import BalanceBar from "../components/BalanceBar";
 export default function Game() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const token = localStorage.getItem("token");
 
   const [balance, setBalance] = useState(user?.coins || 1000);
   const [lastWin, setLastWin] = useState(null);
@@ -25,7 +24,6 @@ export default function Game() {
   const [bonus, setBonus] = useState(null);
 
   useEffect(() => {
-    // Fetch current user coins from server
     const fetchBalance = async () => {
       try {
         const { data } = await api.get("/api/auth/me");
@@ -36,7 +34,6 @@ export default function Game() {
     };
     fetchBalance();
 
-    // Check login bonus from login response (stored in sessionStorage)
     const b = sessionStorage.getItem("loginBonus");
     if (b) {
       setBonus(JSON.parse(b));
@@ -45,13 +42,18 @@ export default function Game() {
 
     socket.connect();
     socket.emit("join_room", "main");
-    socket.on("roll_result", (data) =>
-      console.log("Other player rolled:", data),
-    );
-    return () => socket.disconnect();
+
+    const handleRollResult = (data) =>
+      console.log("Other player rolled:", data);
+    socket.on("roll_result", handleRollResult);
+
+    return () => {
+      socket.off("roll_result", handleRollResult);
+      socket.disconnect();
+    };
   }, []);
 
-  const roll = async () => {
+  const roll = useCallback(async () => {
     if (!betValue) return setResult({ error: "Choose a bet type first!" });
     if (betAmount <= 0) return setResult({ error: "Add chips to bet!" });
     if (betAmount > balance) return setResult({ error: "Not enough coins!" });
@@ -84,12 +86,12 @@ export default function Game() {
 
         socket.emit("broadcast_roll", { roomId: "main", result: data });
         setRolling(false);
-      }, 2400);
+      }, 2700);
     } catch (err) {
       setResult({ error: err.response?.data?.message || "Server error" });
       setRolling(false);
     }
-  };
+  }, [betValue, betAmount, balance, betType, user]);
 
   return (
     <div style={s.page}>
