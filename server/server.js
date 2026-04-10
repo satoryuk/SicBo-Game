@@ -32,8 +32,31 @@ const io = new Server(server, {
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 
+const mongoose = require("mongoose");
+
+app.get("/", (req, res) => {
+  res.status(200).json({
+    message: "SicBo Game Server is running!",
+    version: "1.0.0",
+  });
+});
+
 app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+  const dbState = mongoose.connection.readyState;
+  const dbStatus = {
+    0: "disconnected",
+    1: "connected",
+    2: "connecting",
+    3: "disconnecting",
+  };
+
+  res.status(200).json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: `${Math.floor(process.uptime())}s`,
+    environment: process.env.NODE_ENV || "development",
+    database: dbStatus[dbState] || "unknown",
+  });
 });
 
 app.use("/api/auth", authRoutes);
