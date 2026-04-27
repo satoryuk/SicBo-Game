@@ -1,7 +1,7 @@
 export default function BalanceBar({ balance, lastWin, rounds }) {
   return (
-    <div className="flex justify-center mb-8">
-      <div className="inline-flex items-center gap-6 bg-gradient-to-br from-[#1a1200]/90 to-[#2a1e00]/90 backdrop-blur-md border-2 border-sicbo-gold-dark/60 rounded-xl px-8 py-4 shadow-[0_4px_24px_rgba(201,168,76,0.3),inset_0_1px_0_rgba(201,168,76,0.1)] transition-all duration-300 hover:shadow-[0_6px_32px_rgba(201,168,76,0.4)]">
+    <div className="flex justify-center mb-6 md:mb-8 px-2">
+      <div className="inline-flex items-center gap-3 sm:gap-6 bg-gradient-to-br from-[#1a1200]/90 to-[#2a1e00]/90 backdrop-blur-md border-2 border-sicbo-gold-dark/60 rounded-xl px-4 sm:px-8 py-3 sm:py-4 shadow-[0_4px_24px_rgba(201,168,76,0.3),inset_0_1px_0_rgba(201,168,76,0.1)] transition-all duration-300 hover:shadow-[0_6px_32px_rgba(201,168,76,0.4)] w-full max-w-md sm:max-w-none sm:w-auto">
         <BalanceItem label="Balance" value={`🪙 ${balance.toLocaleString()}`} />
         <Divider />
         <BalanceItem
@@ -18,12 +18,12 @@ export default function BalanceBar({ balance, lastWin, rounds }) {
 
 function BalanceItem({ label, value, highlight }) {
   return (
-    <div className="text-center transition-all duration-300">
-      <div className="text-[0.6rem] tracking-[0.2em] text-sicbo-gold/70 uppercase font-semibold mb-1">
+    <div className="text-center transition-all duration-300 flex-1 sm:flex-none min-w-0">
+      <div className="text-[0.5rem] sm:text-[0.6rem] tracking-[0.15em] sm:tracking-[0.2em] text-sicbo-gold/70 uppercase font-semibold mb-0.5 sm:mb-1">
         {label}
       </div>
       <div
-        className={`text-xl font-bold transition-all duration-300 ${
+        className={`text-base sm:text-xl font-bold transition-all duration-300 truncate ${
           highlight ? "text-[#f0d080] animate-pulse" : "text-[#f0d080]"
         }`}
       >
@@ -34,5 +34,5 @@ function BalanceItem({ label, value, highlight }) {
 }
 
 function Divider() {
-  return <div className="w-px h-9 bg-sicbo-gold-dark" />;
+  return <div className="w-px h-7 sm:h-9 bg-sicbo-gold-dark flex-shrink-0" />;
 }

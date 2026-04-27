@@ -63,7 +63,7 @@ export default function Profile() {
     : [];
 
   return (
-    <div className="min-h-screen bg-sicbo-dark bg-[radial-gradient(ellipse_at_50%_0%,rgba(201,168,76,0.08)_0%,transparent_60%)] font-cinzel text-sicbo-text p-8 pb-16">
+    <div className="min-h-screen bg-sicbo-dark bg-[radial-gradient(ellipse_at_50%_0%,rgba(201,168,76,0.08)_0%,transparent_60%)] font-cinzel text-sicbo-text p-4 sm:p-8 pb-16">
       <div className="flex flex-col gap-5">
         {/* Profile Header */}
         <div className="bg-gradient-to-br from-sicbo-green-dark to-sicbo-green border-2 border-sicbo-gold-dark rounded-2xl p-6 shadow-[0_0_30px_rgba(201,168,76,0.15)] text-center">
@@ -95,16 +95,16 @@ export default function Profile() {
 
         {/* Stats Grid */}
         {stats && (
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
             {statsData.map((s) => (
               <div
                 key={s.label}
-                className="bg-gradient-to-br from-sicbo-green-dark to-sicbo-green border-2 border-sicbo-gold-dark rounded-2xl p-4 px-3 shadow-[0_0_30px_rgba(201,168,76,0.15)] text-center"
+                className="bg-gradient-to-br from-sicbo-green-dark to-sicbo-green border-2 border-sicbo-gold-dark rounded-2xl p-3 sm:p-4 px-2.5 sm:px-3 shadow-[0_0_30px_rgba(201,168,76,0.15)] text-center"
               >
                 <div className="text-[0.55rem] text-sicbo-text-muted tracking-[0.2em] mb-1.5">
                   {s.label.toUpperCase()}
                 </div>
-                <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
+                <div className={`text-lg sm:text-xl font-bold ${s.color}`}>{s.value}</div>
               </div>
             ))}
           </div>

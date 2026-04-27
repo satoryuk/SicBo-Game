@@ -38,7 +38,7 @@ export default function Leaderboard() {
   );
 
   return (
-    <div className="min-h-screen bg-sicbo-dark bg-[radial-gradient(ellipse_at_50%_0%,rgba(201,168,76,0.08)_0%,transparent_60%)] font-cinzel text-sicbo-text p-8 pb-16">
+    <div className="min-h-screen bg-sicbo-dark bg-[radial-gradient(ellipse_at_50%_0%,rgba(201,168,76,0.08)_0%,transparent_60%)] font-cinzel text-sicbo-text p-4 sm:p-8 pb-16">
       <div className="flex flex-col gap-4">
         <h2 className="text-sicbo-gold tracking-[0.15em] m-0 text-center text-2xl font-bold">
           🏆 LEADERBOARD

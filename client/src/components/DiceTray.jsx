@@ -253,17 +253,17 @@ const Die3D = ({ value, rolling, index }) => {
   );
 };
 
-export default function DiceTray({ dice, rolling, total, result }) {
+export default function DiceTray({ dice = [1, 1, 1], rolling = false, total = null, result = null }) {
   const validDice = Array.isArray(dice) ? dice : [1, 1, 1];
   const displayTotal = total ?? validDice.reduce((sum, val) => sum + val, 0);
 
   return (
-    <div className="bg-gradient-to-br from-sicbo-green-dark/80 to-sicbo-green/60 border-2 border-sicbo-gold-dark/50 rounded-2xl py-6 px-5 text-center relative shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-      <div className="text-[0.6rem] tracking-[0.3em] text-sicbo-gold/80 mb-3 font-bold">
+    <div className="bg-gradient-to-br from-sicbo-green-dark/80 to-sicbo-green/60 border-2 border-sicbo-gold-dark/50 rounded-2xl py-3 px-2 sm:py-6 sm:px-5 text-center relative shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+      <div className="text-[0.5rem] sm:text-[0.6rem] tracking-[0.3em] text-sicbo-gold/80 mb-1 sm:mb-3 font-bold">
         🎲 ROLL RESULT
       </div>
 
-      <div style={{ height: 220, width: '100%', position: 'relative' }}>
+      <div className="w-full relative" style={{ height: 'min(180px, 42vw)' }}>
         <Canvas shadows camera={{ position: [0, 8, 4.5], fov: 40 }}>
           <ambientLight intensity={0.7} />
           <directionalLight
@@ -291,7 +291,7 @@ export default function DiceTray({ dice, rolling, total, result }) {
         </Canvas>
       </div>
 
-      <div className="mt-2 min-h-[60px] flex flex-col items-center justify-center transition-all duration-300">
+      <div className="mt-1 min-h-[40px] sm:min-h-[60px] flex flex-col items-center justify-center transition-all duration-300">
         {result?.error ? (
           <div className="text-red-400 text-sm tracking-wider animate-pulse font-bold">
             ⚠ {result.error}
@@ -300,13 +300,13 @@ export default function DiceTray({ dice, rolling, total, result }) {
           <>
             <div className="text-xs text-sicbo-text-muted tracking-[0.15em] mb-1">
               Total:{" "}
-              <span className="text-[#f0d080] text-xl font-bold ml-1 inline-block transition-all duration-300">
+              <span className="text-[#f0d080] text-base font-bold ml-1 inline-block transition-all duration-300">
                 {displayTotal}
               </span>
               {result.isTriple && <span className="text-red-500 ml-2">🔴 Triple!</span>}
             </div>
             <div
-              className={`text-2xl font-black tracking-wider transition-all duration-500 ${
+              className={`text-lg font-black tracking-wider transition-all duration-500 ${
                 result.won
                   ? "text-[#f0d080] [text-shadow:0_0_24px_rgba(240,208,128,0.6)] animate-pulse"
                   : "text-red-600/80"
@@ -319,7 +319,7 @@ export default function DiceTray({ dice, rolling, total, result }) {
           <div className="text-xs text-sicbo-text-muted tracking-[0.15em] flex items-center justify-center h-full">
             Total:{" "}
             <span
-              className="text-[#f0d080] text-2xl font-bold ml-2 inline-block min-w-[3rem] transition-all duration-300"
+              className="text-[#f0d080] text-lg font-bold ml-2 inline-block min-w-[3rem] transition-all duration-300"
               aria-live="polite"
             >
               {displayTotal}
@@ -338,9 +338,3 @@ DiceTray.propTypes = {
   result: PropTypes.object,
 };
 
-DiceTray.defaultProps = {
-  dice: [1, 1, 1],
-  rolling: false,
-  total: null,
-  result: null,
-};

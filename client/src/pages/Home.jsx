@@ -92,8 +92,8 @@ export default function Home() {
   }, [betValue, betAmount, balance, betType]);
 
   return (
-    <div className="min-h-screen bg-sicbo-dark bg-gradient-to-b from-sicbo-gold/5 to-transparent font-cinzel text-sicbo-text flex flex-col items-center py-8 px-4 pb-16">
-      <header className="text-center mb-10">
+    <div className="min-h-screen bg-sicbo-dark bg-gradient-to-b from-sicbo-gold/5 to-transparent font-cinzel text-sicbo-text flex flex-col items-center py-6 sm:py-8 px-3 sm:px-4 pb-16">
+      <header className="text-center mb-6 sm:mb-10">
         <h1 className="text-[clamp(2.5rem,7vw,4rem)] font-black tracking-[0.12em] text-sicbo-gold [text-shadow:0_0_40px_rgba(201,168,76,0.6),0_4px_8px_rgba(0,0,0,0.8)] m-0 transition-all duration-300 hover:scale-105">
           SIC BO
         </h1>
@@ -108,7 +108,7 @@ export default function Home() {
 
       <BalanceBar balance={balance} lastWin={lastWin} rounds={rounds} />
 
-      <div className="w-full max-w-[680px] flex flex-col gap-5">
+      <div className="w-full max-w-[680px] flex flex-col gap-4 sm:gap-5 px-1">
         <DiceTray dice={dice} rolling={rolling} total={total} result={result} />
 
         <BetPanel
@@ -133,7 +133,7 @@ export default function Home() {
           <div className="text-sm text-[#f0d080] tracking-wider mb-4 font-semibold">
             ✨ Want to save your progress and compete?
           </div>
-          <div className="flex gap-3 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               className="bg-gradient-to-r from-sicbo-gold-dark to-sicbo-gold border-none text-sicbo-dark rounded-lg py-3 px-7 font-cinzel text-xs font-bold tracking-wider cursor-pointer hover:opacity-90 transition-all duration-300 hover:scale-105 active:scale-95 shadow-[0_4px_16px_rgba(201,168,76,0.4)]"
               onClick={() => navigate("/signup")}

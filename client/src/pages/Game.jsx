@@ -121,16 +121,19 @@ export default function Game() {
         </div>
       )}
 
-      {/* Header */}
-      <header style={s.header}>
+      {/* Header — hidden on mobile since NavBar already shows brand */}
+      <header className="hidden sm:block" style={s.header}>
         <h1 style={s.title}>SIC BO</h1>
         <div style={s.subtitle}>骰寶 · DICE TREASURE</div>
         <div style={s.goldLine} />
       </header>
 
-      <BalanceBar balance={balance} lastWin={lastWin} rounds={rounds} />
+      {/* Desktop balance bar (hidden on mobile — shown in sticky bar instead) */}
+      <div className="hidden sm:block">
+        <BalanceBar balance={balance} lastWin={lastWin} rounds={rounds} />
+      </div>
 
-      <div style={s.wrap}>
+      <div style={s.wrap} className="!pb-[140px] sm:!pb-[60px]">
         <DiceTray dice={dice} rolling={rolling} total={total} result={result} />
 
         <BetPanel
@@ -173,8 +176,9 @@ export default function Game() {
           </div>
         )}
 
-        {/* Roll Button */}
+        {/* Roll Button — desktop only (mobile uses sticky bar) */}
         <button
+          className="hidden sm:block"
           style={{ ...s.rollBtn, opacity: rolling || balance === 0 ? 0.6 : 1 }}
           onClick={roll}
           disabled={rolling || balance === 0}
@@ -242,6 +246,45 @@ export default function Game() {
           </table>
         </div>
       </div>
+
+      {/* ── Sticky Bottom Bar (mobile only) ── */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-[#0d0d0d] via-[#0d0d0d] to-[#0d0d0d]/95 border-t-2 border-sicbo-gold-dark/50 px-3 py-2 backdrop-blur-md shadow-[0_-4px_24px_rgba(0,0,0,0.6)]"
+        style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}
+      >
+        {/* Balance row */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <div className="text-center">
+              <div className="text-[0.45rem] tracking-[0.15em] text-sicbo-gold/60 font-semibold">BALANCE</div>
+              <div className="text-sm font-bold text-[#f0d080]">🪙 {balance.toLocaleString()}</div>
+            </div>
+            <div className="w-px h-6 bg-sicbo-gold-dark/40" />
+            <div className="text-center">
+              <div className="text-[0.45rem] tracking-[0.15em] text-sicbo-gold/60 font-semibold">BET</div>
+              <div className="text-sm font-bold text-[#f0d080]">${betAmount}</div>
+            </div>
+          </div>
+          {lastWin && (
+            <div className="text-center">
+              <div className="text-[0.45rem] tracking-[0.15em] text-sicbo-gold/60 font-semibold">LAST WIN</div>
+              <div className="text-sm font-bold text-[#27ae60] animate-pulse">+{lastWin}</div>
+            </div>
+          )}
+        </div>
+        {/* Roll button */}
+        <button
+          className="w-full py-3 border-none rounded-xl font-cinzel text-sm font-black tracking-[0.15em] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 active:scale-[0.98]"
+          style={{
+            background: "linear-gradient(135deg, #8a6a1f, #c9a84c, #8a6a1f)",
+            color: "#0d0d0d",
+            boxShadow: "0 4px 20px rgba(201,168,76,0.4)",
+          }}
+          onClick={roll}
+          disabled={rolling || balance === 0}
+        >
+          {rolling ? "🎲 Rolling..." : "🎲 ROLL THE DICE"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -267,7 +310,7 @@ const s = {
     alignItems: "center",
     justifyContent: "center",
   },
-  header: { textAlign: "center", padding: "24px 0 0" },
+  header: { textAlign: "center", padding: "16px 16px 0" },
   title: {
     fontSize: "clamp(2rem, 6vw, 3.6rem)",
     fontWeight: 900,
@@ -293,10 +336,10 @@ const s = {
     width: "100%",
     maxWidth: 680,
     margin: "0 auto",
-    padding: "0 0 60px 0",
+    padding: "0 12px 60px",
     display: "flex",
     flexDirection: "column",
-    gap: 22,
+    gap: 16,
   },
   warning: {
     background: "rgba(201,168,76,0.08)",

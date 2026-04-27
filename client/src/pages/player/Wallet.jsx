@@ -104,7 +104,7 @@ export default function Wallet() {
   const isLowBalance = coins < LOW_BALANCE_THRESHOLD;
 
   return (
-    <div className="min-h-screen bg-sicbo-dark bg-[radial-gradient(ellipse_at_50%_0%,rgba(201,168,76,0.08)_0%,transparent_60%)] font-cinzel text-sicbo-text p-8 pb-16">
+    <div className="min-h-screen bg-sicbo-dark bg-[radial-gradient(ellipse_at_50%_0%,rgba(201,168,76,0.08)_0%,transparent_60%)] font-cinzel text-sicbo-text p-4 sm:p-8 pb-16">
       <div className="flex flex-col gap-5">
         {/* Low balance warning */}
         {isLowBalance && (
@@ -129,7 +129,7 @@ export default function Wallet() {
             YOUR WALLET
           </div>
           <div
-            className={`text-5xl font-black my-2.5 transition-colors duration-500 ${isLowBalance ? "text-[#c0392b]" : "text-sicbo-gold"}`}
+            className={`text-4xl sm:text-5xl font-black my-2.5 transition-colors duration-500 ${isLowBalance ? "text-[#c0392b]" : "text-sicbo-gold"}`}
           >
             🪙 {coins.toLocaleString()}
           </div>
@@ -155,7 +155,7 @@ export default function Wallet() {
         )}
 
         {/* Deposit & Withdraw */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Deposit */}
           <div className="bg-gradient-to-br from-sicbo-green-dark to-sicbo-green border-2 border-sicbo-gold-dark rounded-2xl p-6 shadow-[0_0_30px_rgba(201,168,76,0.15)]">
             <div className="text-[0.65rem] tracking-[0.2em] text-[#27ae60] mb-3">

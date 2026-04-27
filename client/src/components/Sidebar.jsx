@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 
-export default function Sidebar() {
+export default function Sidebar({ onClose, isMobile }) {
   const navigate = useNavigate();
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -9,6 +9,11 @@ export default function Sidebar() {
   const logout = () => {
     localStorage.clear();
     navigate("/login");
+  };
+
+  const handleNav = (path) => {
+    navigate(path);
+    if (isMobile && onClose) onClose();
   };
 
   const navLinks = isAdmin
@@ -31,11 +36,23 @@ export default function Sidebar() {
 
   return (
     <aside className="w-64 min-h-screen bg-gradient-to-b from-[#0b1a10] to-[#0e2218] border-r-2 border-sicbo-gold-dark/50 flex flex-col font-cinzel">
-      {/* Logo Only */}
+      {/* Logo + close button on mobile */}
       <div
-        className="p-6 border-b border-sicbo-gold-dark/30 cursor-pointer hover:bg-sicbo-gold/5 transition-all duration-300 flex justify-center"
-        onClick={() => navigate(isAdmin ? "/admin" : "/game")}
+        className="p-6 border-b border-sicbo-gold-dark/30 cursor-pointer hover:bg-sicbo-gold/5 transition-all duration-300 flex justify-center items-center relative"
+        onClick={() => handleNav(isAdmin ? "/admin" : "/game")}
       >
+        {isMobile && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onClose) onClose();
+            }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent border border-sicbo-gold-dark/50 rounded-lg w-8 h-8 flex items-center justify-center text-sicbo-gold cursor-pointer hover:bg-sicbo-gold/10 transition-all duration-300 text-lg leading-none"
+            aria-label="Close menu"
+          >
+            ×
+          </button>
+        )}
         <img
           src={`${process.env.PUBLIC_URL}/logo_removebg.png`}
           alt="SIC BO"
@@ -44,11 +61,11 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 py-4">
+      <nav className="flex-1 py-4 overflow-y-auto">
         {navLinks.map((link) => (
           <button
             key={link.path}
-            onClick={() => navigate(link.path)}
+            onClick={() => handleNav(link.path)}
             className={`w-full px-6 py-3 flex items-center gap-3 text-left font-cinzel text-sm tracking-wide transition-all duration-300 border-l-4 ${
               location.pathname === link.path
                 ? "border-sicbo-gold bg-sicbo-gold/15 text-sicbo-gold shadow-[inset_0_0_20px_rgba(201,168,76,0.1)]"
