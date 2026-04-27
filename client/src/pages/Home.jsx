@@ -109,7 +109,7 @@ export default function Home() {
       <BalanceBar balance={balance} lastWin={lastWin} rounds={rounds} />
 
       <div className="w-full max-w-[680px] flex flex-col gap-5">
-        <DiceTray dice={dice} rolling={rolling} total={total} />
+        <DiceTray dice={dice} rolling={rolling} total={total} result={result} />
 
         <BetPanel
           balance={balance}
@@ -128,49 +128,6 @@ export default function Home() {
         >
           {rolling ? "🎲 Rolling..." : "🎲 ROLL THE DICE"}
         </button>
-
-        <div className="bg-gradient-to-br from-[#0a1a10]/80 to-[#0d2218]/80 backdrop-blur-sm border-2 border-sicbo-gold-dark/50 rounded-xl py-5 px-6 text-center min-h-[90px] flex items-center justify-center flex-col gap-2 shadow-[0_4px_16px_rgba(0,0,0,0.3)] transition-all duration-300">
-          {result?.error ? (
-            <div className="text-red-400 text-sm tracking-wider animate-pulse">
-              ⚠ {result.error}
-            </div>
-          ) : result ? (
-            <>
-              <div className="text-[0.7rem] text-sicbo-text-muted tracking-[0.2em]">
-                Dice: {result.vals?.join(" · ")} | Total: {result.total}
-                {result.isTriple ? " 🔴 Triple!" : ""}
-              </div>
-              <div
-                className={`text-3xl font-bold tracking-wider transition-all duration-500 ${
-                  result.won
-                    ? "text-[#f0d080] [text-shadow:0_0_24px_rgba(240,208,128,0.6)] animate-pulse"
-                    : "text-red-600"
-                }`}
-              >
-                {result.won ? `🎉 YOU WIN! +${result.payout}` : "✗ LOSE"}
-              </div>
-            </>
-          ) : (
-            <div className="text-sicbo-text-muted text-[0.7rem] tracking-[0.2em]">
-              Place a bet and roll the dice
-            </div>
-          )}
-        </div>
-
-        <div className="flex gap-2 justify-center flex-wrap">
-          {history.map((h, i) => (
-            <span
-              key={i}
-              className={`text-[0.6rem] py-1 px-2.5 rounded-full font-bold tracking-wider transition-all duration-300 hover:scale-110 ${
-                h === "win"
-                  ? "bg-sicbo-gold/20 text-sicbo-gold border-2 border-sicbo-gold-dark shadow-[0_2px_8px_rgba(201,168,76,0.3)]"
-                  : "bg-red-900/20 text-red-500 border-2 border-red-900/50 shadow-[0_2px_8px_rgba(192,57,43,0.2)]"
-              }`}
-            >
-              {h === "win" ? "✓" : "✗"}
-            </span>
-          ))}
-        </div>
 
         <div className="bg-gradient-to-br from-sicbo-gold/15 to-sicbo-gold/5 backdrop-blur-sm border-2 border-sicbo-gold-dark/60 rounded-xl p-6 text-center shadow-[0_4px_20px_rgba(201,168,76,0.2)] transition-all duration-300 hover:shadow-[0_6px_28px_rgba(201,168,76,0.3)]">
           <div className="text-sm text-[#f0d080] tracking-wider mb-4 font-semibold">

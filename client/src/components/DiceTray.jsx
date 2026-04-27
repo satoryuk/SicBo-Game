@@ -1,293 +1,331 @@
-import PropTypes from "prop-types";
+import React, { useRef, useMemo, useEffect } from 'react';
+import * as THREE from 'three';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { Environment, ContactShadows, RoundedBox } from '@react-three/drei';
+import PropTypes from 'prop-types';
 
-/* ── constants ── */
-const DIE_SIZE = 82;
-const DIE_HALF = DIE_SIZE / 2;
-const PERSPECTIVE = 600;
-
-/* ── pip positions on a 3×3 grid (indices 0-8) ── */
 const PIPS = {
   1: [4],
-  2: [2, 6],
-  3: [2, 4, 6],
+  2: [0, 8],
+  3: [0, 4, 8],
   4: [0, 2, 6, 8],
   5: [0, 2, 4, 6, 8],
   6: [0, 2, 3, 5, 6, 8],
 };
 
-/* ── single face renderer ── */
-function Face({ value, bg, shadow }) {
-  const dots = PIPS[value] || [];
-  return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        background: bg,
-        borderRadius: 8,
-        border: "1px solid rgba(0,0,0,0.08)",
-        boxShadow: shadow || "none",
-        display: "grid",
-        gridTemplateColumns: "repeat(3,1fr)",
-        gridTemplateRows: "repeat(3,1fr)",
-        padding: "18%",
-        gap: "12%",
-        boxSizing: "border-box",
-      }}
-    >
-      {Array.from({ length: 9 }, (_, i) => (
-        <span
-          key={i}
-          style={{
-            display: "block",
-            borderRadius: "50%",
-            aspectRatio: "1",
-            background: dots.includes(i)
-              ? "radial-gradient(circle at 35% 30%, #555, #111)"
-              : "transparent",
-            boxShadow: dots.includes(i)
-              ? "inset 0 2px 3px rgba(255,255,255,0.12), 0 1px 4px rgba(0,0,0,0.45)"
-              : "none",
-          }}
-        />
-      ))}
-    </div>
-  );
-}
+const createDiceTexture = (value) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
 
-/* ── single die (true CSS 3-D cube) ── */
-function Die({ value, rolling, index }) {
-  /* standard die adjacency (opposite faces sum to 7)
-     For the isometric view rotateX(-30deg) rotateY(45deg) we see: top, front, right.
-     We compute all 6 faces so the cube is complete. */
-  const adj = {
-    1: { front: 2, right: 3 },
-    2: { front: 1, right: 3 },
-    3: { front: 2, right: 6 },
-    4: { front: 6, right: 2 },
-    5: { front: 6, right: 3 },
-    6: { front: 5, right: 4 },
-  };
+  // Completely transparent background
+  ctx.clearRect(0, 0, 512, 512);
 
-  const S = DIE_SIZE;
-  const H = DIE_HALF;
-  const f = adj[value] || { front: 2, right: 3 };
+  const pips = PIPS[value] || [];
 
-  /* Compute all 6 face values (opposite faces sum to 7) */
-  const top = value;
-  const bottom = 7 - value;
-  const front = f.front;
-  const back = 7 - f.front;
-  const right = f.right;
-  const left = 7 - f.right;
+  // Large margins to cluster the dots tightly in the center, accommodating the extremely rounded corners
+  const margin = 110;
+  const size = 512 - margin * 2;
+  const cellSize = size / 2;
 
-  /* shared style for every face */
-  const faceWrap = (transform) => ({
-    position: "absolute",
-    width: S,
-    height: S,
-    transform,
-    transformStyle: "preserve-3d",
+  pips.forEach(index => {
+    const col = index % 3;
+    const row = Math.floor(index / 3);
+    const x = margin + col * cellSize;
+    const y = margin + row * cellSize;
+
+    const isRed = value === 1;
+    // Smaller pips to match the reference style
+    const pipRadius = isRed ? 70 : 38;
+
+    // Solid dark color for the hole
+    ctx.beginPath();
+    ctx.arc(x, y, pipRadius, 0, Math.PI * 2);
+    ctx.fillStyle = isRed ? '#a00000' : '#080808';
+    ctx.fill();
+
+    // Sharp dark rim for embedded look
+    ctx.beginPath();
+    ctx.arc(x, y, pipRadius, 0, Math.PI * 2);
+    ctx.lineWidth = pipRadius * 0.2;
+    ctx.strokeStyle = isRed ? '#500000' : '#000000';
+    ctx.stroke();
+
+    // Very tiny specular highlight to simulate the glossy lip of the hole
+    ctx.beginPath();
+    ctx.arc(x, y, pipRadius, 0, Math.PI * 2);
+    const lightGrad = ctx.createLinearGradient(x - pipRadius, y - pipRadius, x + pipRadius, y + pipRadius);
+    lightGrad.addColorStop(0.7, 'rgba(255,255,255,0)');
+    lightGrad.addColorStop(0.9, 'rgba(255,255,255,0.3)');
+    lightGrad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = lightGrad;
+    ctx.fill();
   });
 
-  /* isometric-ish resting angle */
-  const restTransform = `rotateX(-30deg) rotateY(45deg)`;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.anisotropy = 16;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+};
+
+const Die3D = ({ value, rolling, index }) => {
+  const meshRef = useRef();
+  const groupRef = useRef();
+
+  const pipMaterials = useMemo(() => {
+    // Generate materials for faces 1 through 6
+    return [1, 2, 3, 4, 5, 6].map(val => {
+      const tex = createDiceTexture(val);
+      return new THREE.MeshPhysicalMaterial({
+        map: tex,
+        transparent: true,
+        roughness: 0.05,
+        metalness: 0.0,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.0,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+      });
+    });
+  }, []);
+
+  // Clustered triangular arrangement for a more realistic casino feel
+  const baseStartPos = useMemo(() => {
+    if (index === 0) return new THREE.Vector3(-1.3, 0.9, 0.8);
+    if (index === 1) return new THREE.Vector3(1.3, 0.9, 0.8);
+    return new THREE.Vector3(0, 0.9, -1.3);
+  }, [index]);
+  
+  const targetPos = useRef(baseStartPos.clone());
+  const currentPos = useRef(baseStartPos.clone());
+  const velocity = useRef(new THREE.Vector3(0, 0, 0));
+  const angularVelocity = useRef(new THREE.Vector3(0, 0, 0));
+  const targetRotationGroup = useRef(new THREE.Euler(0, 0, 0));
+  const targetRotationMesh = useRef(new THREE.Euler(0, 0, 0));
+
+  const prevRolling = useRef(rolling);
+
+  useEffect(() => {
+    if (rolling && !prevRolling.current) {
+      // Start roll: Explosive pop from near the floor
+      currentPos.current.set(baseStartPos.x, 0.5, baseStartPos.z);
+
+      velocity.current.set(
+        (Math.random() - 0.5) * 16, // Stronger horizontal burst
+        22 + Math.random() * 8,     // Higher vertical toss
+        (Math.random() - 0.5) * 16
+      );
+
+      // Extremely fast chaotic spin
+      angularVelocity.current.set(
+        (Math.random() > 0.5 ? 1 : -1) * (15 + Math.random() * 20),
+        (Math.random() > 0.5 ? 1 : -1) * (15 + Math.random() * 20),
+        (Math.random() > 0.5 ? 1 : -1) * (15 + Math.random() * 20)
+      );
+    } else if (!rolling) {
+      // End roll: Calculate mathematically perfect target rotations for the top face
+      const tMesh = new THREE.Euler(0, 0, 0);
+      switch (value) {
+        case 1: tMesh.set(0, 0, 0); break;
+        case 6: tMesh.set(Math.PI, 0, 0); break;
+        case 2: tMesh.set(-Math.PI / 2, 0, 0); break;
+        case 5: tMesh.set(Math.PI / 2, 0, 0); break;
+        case 3: tMesh.set(0, 0, Math.PI / 2); break;
+        case 4: tMesh.set(0, 0, -Math.PI / 2); break;
+        default: break;
+      }
+      targetRotationMesh.current.copy(tMesh);
+
+      // Organic resting pose: small random tilt and scattered position
+      const baseYaw = Math.floor(Math.random() * 4) * (Math.PI / 2);
+      const yawJitter = (Math.random() - 0.5) * 0.7; // Slightly more messy rotation
+      targetRotationGroup.current.set(0, baseYaw + yawJitter, 0);
+
+      // Randomize the resting position so they don't land perfectly aligned every time
+      targetPos.current.set(
+        baseStartPos.x + (Math.random() - 0.5) * 0.6,
+        0.9, // Ground level for 1.8 cube
+        baseStartPos.z + (Math.random() - 0.5) * 0.6
+      );
+    }
+    prevRolling.current = rolling;
+  }, [rolling, value, index, baseStartPos]);
+
+  useFrame((state, delta) => {
+    if (!meshRef.current || !groupRef.current) return;
+
+    const dt = Math.min(delta, 0.1); // Clamp dt for lag spikes
+
+    if (rolling) {
+      velocity.current.y -= 60 * dt; // Stronger gravity for "heavy" casino dice
+      currentPos.current.addScaledVector(velocity.current, dt);
+
+      // Floor collision (radius is 0.9 for 1.8 box)
+      if (currentPos.current.y < 0.9) {
+        currentPos.current.y = 0.9;
+        velocity.current.y *= -0.4; // Less bouncy, heavier thud
+        velocity.current.x *= 0.75; // More friction on felt
+        velocity.current.z *= 0.75;
+
+        // Impart a chaotic spin "kick" when hitting the table
+        angularVelocity.current.x += (Math.random() - 0.5) * 18;
+        angularVelocity.current.z += (Math.random() - 0.5) * 18;
+      }
+
+      // Wall collision bounds
+      const boundX = 3.5;
+      const boundZ = 2.5;
+
+      if (Math.abs(currentPos.current.x) > boundX) {
+        currentPos.current.x = Math.sign(currentPos.current.x) * boundX;
+        velocity.current.x *= -0.6;
+        angularVelocity.current.y += (Math.random() - 0.5) * 15; // Spin kick
+      }
+      if (Math.abs(currentPos.current.z) > boundZ) {
+        currentPos.current.z = Math.sign(currentPos.current.z) * boundZ;
+        velocity.current.z *= -0.6;
+        angularVelocity.current.x += (Math.random() - 0.5) * 15; // Spin kick
+      }
+
+      groupRef.current.position.copy(currentPos.current);
+
+      meshRef.current.rotation.x += angularVelocity.current.x * dt;
+      meshRef.current.rotation.y += angularVelocity.current.y * dt;
+      meshRef.current.rotation.z += angularVelocity.current.z * dt;
+
+      angularVelocity.current.multiplyScalar(0.98); // Air/surface friction
+    } else {
+      // Cinematic organic settle: slightly softer lerp multiplier for a more physical snap
+      groupRef.current.position.lerp(targetPos.current, 8 * dt);
+
+      const targetQuatGroup = new THREE.Quaternion().setFromEuler(targetRotationGroup.current);
+      groupRef.current.quaternion.slerp(targetQuatGroup, 8 * dt);
+
+      const targetQuatMesh = new THREE.Quaternion().setFromEuler(targetRotationMesh.current);
+      meshRef.current.quaternion.slerp(targetQuatMesh, 10 * dt);
+
+      currentPos.current.copy(groupRef.current.position);
+    }
+  });
 
   return (
-    /* outer wrapper — gives the component a fixed box in the flow */
-    <div
-      className={rolling ? "" : "dice-idle"}
-      style={{
-        width: S + 30,
-        height: S + 30,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      {/* cube pivot — must carry preserve-3d */}
-      <div
-        className={rolling ? `dice-roll-${index}` : ""}
-        style={{
-          width: S,
-          height: S,
-          position: "relative",
-          transformStyle: "preserve-3d",
-          transform: rolling ? undefined : restTransform,
-          transition: rolling ? "none" : "transform 0.6s ease-out",
-        }}
-      >
-        {/* TOP — the "value" face */}
-        <div style={faceWrap(`rotateX(90deg) translateZ(${H}px)`)}>
-          <Face
-            value={top}
-            bg="linear-gradient(135deg, #fefefe, #ececec)"
-            shadow="inset 0 0 12px rgba(255,255,255,0.5)"
+    <group ref={groupRef}>
+      <group ref={meshRef}>
+        <RoundedBox args={[1.8, 1.8, 1.8]} radius={0.45} smoothness={16} castShadow receiveShadow>
+          <meshPhysicalMaterial 
+            color="#f6f2e4" // Beautiful ivory/bone color matching the reference
+            roughness={0.05} // Extremely glossy
+            metalness={0.0} 
+            clearcoat={1.0} 
+            clearcoatRoughness={0.02} 
           />
-        </div>
+        </RoundedBox>
 
-        {/* FRONT */}
-        <div style={faceWrap(`translateZ(${H}px)`)}>
-          <Face
-            value={front}
-            bg="linear-gradient(180deg, #e6e6e6, #c9c9c9)"
-            shadow="inset 0 -6px 14px rgba(0,0,0,0.08)"
-          />
-        </div>
-
-        {/* RIGHT */}
-        <div style={faceWrap(`rotateY(90deg) translateZ(${H}px)`)}>
-          <Face
-            value={right}
-            bg="linear-gradient(90deg, #d4d4d4, #aaaaaa)"
-            shadow="inset -6px 0 14px rgba(0,0,0,0.1)"
-          />
-        </div>
-
-        {/* BACK */}
-        <div style={faceWrap(`rotateY(180deg) translateZ(${H}px)`)}>
-          <Face
-            value={back}
-            bg="linear-gradient(180deg, #c9c9c9, #b0b0b0)"
-            shadow="inset 0 6px 14px rgba(0,0,0,0.08)"
-          />
-        </div>
-
-        {/* LEFT */}
-        <div style={faceWrap(`rotateY(-90deg) translateZ(${H}px)`)}>
-          <Face
-            value={left}
-            bg="linear-gradient(90deg, #aaaaaa, #c0c0c0)"
-            shadow="inset 6px 0 14px rgba(0,0,0,0.1)"
-          />
-        </div>
-
-        {/* BOTTOM */}
-        <div style={faceWrap(`rotateX(-90deg) translateZ(${H}px)`)}>
-          <Face
-            value={bottom}
-            bg="linear-gradient(135deg, #c0c0c0, #a8a8a8)"
-            shadow="inset 0 0 12px rgba(0,0,0,0.15)"
-          />
-        </div>
-      </div>
-    </div>
+        {/* Explicitly positioned planes for each face guarantee perfect mapping regardless of Geometry internals */}
+        {/* Top Face (+Y) -> Value 1 */}
+        <mesh position={[0, 0.901, 0]} rotation={[-Math.PI / 2, 0, 0]} material={pipMaterials[0]}>
+          <planeGeometry args={[1.3, 1.3]} />
+        </mesh>
+        {/* Bottom Face (-Y) -> Value 6 */}
+        <mesh position={[0, -0.901, 0]} rotation={[Math.PI / 2, 0, 0]} material={pipMaterials[5]}>
+          <planeGeometry args={[1.3, 1.3]} />
+        </mesh>
+        {/* Right Face (+X) -> Value 3 */}
+        <mesh position={[0.901, 0, 0]} rotation={[0, Math.PI / 2, 0]} material={pipMaterials[2]}>
+          <planeGeometry args={[1.3, 1.3]} />
+        </mesh>
+        {/* Left Face (-X) -> Value 4 */}
+        <mesh position={[-0.901, 0, 0]} rotation={[0, -Math.PI / 2, 0]} material={pipMaterials[3]}>
+          <planeGeometry args={[1.3, 1.3]} />
+        </mesh>
+        {/* Front Face (+Z) -> Value 2 */}
+        <mesh position={[0, 0, 0.901]} rotation={[0, 0, 0]} material={pipMaterials[1]}>
+          <planeGeometry args={[1.3, 1.3]} />
+        </mesh>
+        {/* Back Face (-Z) -> Value 5 */}
+        <mesh position={[0, 0, -0.901]} rotation={[0, Math.PI, 0]} material={pipMaterials[4]}>
+          <planeGeometry args={[1.3, 1.3]} />
+        </mesh>
+      </group>
+    </group>
   );
-}
+};
 
-/* ── tray ── */
-export default function DiceTray({ dice, rolling, total }) {
+export default function DiceTray({ dice, rolling, total, result }) {
   const validDice = Array.isArray(dice) ? dice : [1, 1, 1];
   const displayTotal = total ?? validDice.reduce((sum, val) => sum + val, 0);
 
   return (
-    <div className="bg-gradient-to-br from-sicbo-green-dark/80 to-sicbo-green/60 border-2 border-sicbo-gold-dark/50 rounded-2xl py-8 px-5 text-center relative shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-      {/* ── keyframe CSS ── */}
-      <style>{`
-        /* resting glow */
-        .dice-idle {
-          filter: drop-shadow(0 8px 18px rgba(0,0,0,0.55))
-                  drop-shadow(0 0 22px rgba(201,168,76,0.2));
-          animation: dice-glow 2.4s ease-in-out infinite;
-        }
-        @keyframes dice-glow {
-          0%,100% { filter: drop-shadow(0  8px 18px rgba(0,0,0,0.55)) drop-shadow(0 0 22px rgba(201,168,76,0.2)); }
-          50%     { filter: drop-shadow(0 12px 26px rgba(0,0,0,0.7))  drop-shadow(0 0 34px rgba(201,168,76,0.4)); }
-        }
-
-        /* rolling animations — each die has unique path, timing, rate */
-        .dice-roll-0 {
-          animation: droll0 2.2s cubic-bezier(.22,.61,.36,1) forwards;
-          transform-style: preserve-3d;
-        }
-        .dice-roll-1 {
-          animation: droll1 2.35s cubic-bezier(.22,.61,.36,1) 0.06s forwards;
-          transform-style: preserve-3d;
-        }
-        .dice-roll-2 {
-          animation: droll2 2.5s cubic-bezier(.22,.61,.36,1) 0.12s forwards;
-          transform-style: preserve-3d;
-        }
-
-        /* die 0 — fast tumble, heavy X-axis spin */
-        @keyframes droll0 {
-          0%   { transform: rotateX(-30deg)  rotateY(45deg)  translateY(0)     scale(1);    }
-          6%   { transform: rotateX(80deg)   rotateY(130deg) translateY(-55px) scale(1.12); }
-          14%  { transform: rotateX(220deg)  rotateY(280deg) translateY(-40px) scale(0.97); }
-          24%  { transform: rotateX(400deg)  rotateY(460deg) translateY(-68px) scale(1.15); }
-          36%  { transform: rotateX(620deg)  rotateY(650deg) translateY(-50px) scale(1.05); }
-          50%  { transform: rotateX(840deg)  rotateY(830deg) translateY(-60px) scale(1.08); }
-          64%  { transform: rotateX(1020deg) rotateY(990deg) translateY(-40px) scale(1.02); }
-          76%  { transform: rotateX(1150deg) rotateY(1100deg) translateY(-22px) scale(1);   }
-          86%  { transform: rotateX(1250deg) rotateY(1180deg) translateY(-10px) scale(1);   }
-          94%  { transform: rotateX(1310deg) rotateY(1230deg) translateY(-3px)  scale(1);   }
-          100% { transform: rotateX(-30deg)  rotateY(45deg)  translateY(0)     scale(1);    }
-        }
-
-        /* die 1 — wider arc, heavy Y-axis spin */
-        @keyframes droll1 {
-          0%   { transform: rotateX(-30deg)  rotateY(45deg)   translateY(0)     scale(1);    }
-          7%   { transform: rotateX(110deg)  rotateY(190deg)  translateY(-62px) scale(1.18); }
-          16%  { transform: rotateX(260deg)  rotateY(380deg)  translateY(-45px) scale(0.94); }
-          27%  { transform: rotateX(440deg)  rotateY(590deg)  translateY(-72px) scale(1.13); }
-          40%  { transform: rotateX(650deg)  rotateY(800deg)  translateY(-55px) scale(1.06); }
-          53%  { transform: rotateX(860deg)  rotateY(1000deg) translateY(-62px) scale(1.04); }
-          66%  { transform: rotateX(1030deg) rotateY(1160deg) translateY(-38px) scale(1.01); }
-          78%  { transform: rotateX(1160deg) rotateY(1290deg) translateY(-18px) scale(1);    }
-          88%  { transform: rotateX(1250deg) rotateY(1370deg) translateY(-7px)  scale(1);    }
-          95%  { transform: rotateX(1300deg) rotateY(1410deg) translateY(-2px)  scale(1);    }
-          100% { transform: rotateX(-30deg)  rotateY(45deg)   translateY(0)     scale(1);    }
-        }
-
-        /* die 2 — highest toss, balanced spin */
-        @keyframes droll2 {
-          0%   { transform: rotateX(-30deg)  rotateY(45deg)   translateY(0)     scale(1);    }
-          8%   { transform: rotateX(140deg)  rotateY(160deg)  translateY(-78px) scale(1.22); }
-          18%  { transform: rotateX(310deg)  rotateY(340deg)  translateY(-55px) scale(0.93); }
-          30%  { transform: rotateX(520deg)  rotateY(540deg)  translateY(-80px) scale(1.16); }
-          42%  { transform: rotateX(720deg)  rotateY(730deg)  translateY(-60px) scale(1.08); }
-          55%  { transform: rotateX(900deg)  rotateY(910deg)  translateY(-65px) scale(1.04); }
-          67%  { transform: rotateX(1060deg) rotateY(1070deg) translateY(-42px) scale(1.01); }
-          78%  { transform: rotateX(1180deg) rotateY(1190deg) translateY(-20px) scale(1);    }
-          88%  { transform: rotateX(1270deg) rotateY(1270deg) translateY(-8px)  scale(1);    }
-          95%  { transform: rotateX(1320deg) rotateY(1310deg) translateY(-2px)  scale(1);    }
-          100% { transform: rotateX(-30deg)  rotateY(45deg)   translateY(0)     scale(1);    }
-        }
-      `}</style>
-
-      <div className="text-[0.6rem] tracking-[0.3em] text-sicbo-gold/80 mb-5 font-bold">
+    <div className="bg-gradient-to-br from-sicbo-green-dark/80 to-sicbo-green/60 border-2 border-sicbo-gold-dark/50 rounded-2xl py-6 px-5 text-center relative shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+      <div className="text-[0.6rem] tracking-[0.3em] text-sicbo-gold/80 mb-3 font-bold">
         🎲 ROLL RESULT
       </div>
 
-      {/* perspective container */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: 36,
-          perspective: PERSPECTIVE,
-          perspectiveOrigin: "50% 40%",
-          transformStyle: "preserve-3d",
-          minHeight: 140,
-          padding: "20px 0 10px",
-        }}
-        role="img"
-        aria-label={`Dice showing ${validDice.join(", ")}`}
-      >
-        {validDice.map((v, i) => (
-          <Die key={i} value={v} rolling={rolling} index={i} />
-        ))}
+      <div style={{ height: 220, width: '100%', position: 'relative' }}>
+        <Canvas shadows camera={{ position: [0, 8, 4.5], fov: 40 }}>
+          <ambientLight intensity={0.7} />
+          <directionalLight
+            castShadow
+            position={[5, 10, 5]}
+            intensity={1.2}
+            shadow-mapSize-width={1024}
+            shadow-mapSize-height={1024}
+            shadow-camera-near={0.5}
+            shadow-camera-far={25}
+            shadow-camera-left={-10}
+            shadow-camera-right={10}
+            shadow-camera-top={10}
+            shadow-camera-bottom={-10}
+          />
+          <Environment preset="apartment" />
+
+          <group position={[0, -1, 0]}>
+            {validDice.map((v, i) => (
+              <Die3D key={i} value={v} rolling={rolling} index={i} />
+            ))}
+          </group>
+
+          <ContactShadows position={[0, 0.01, 0]} opacity={0.5} scale={20} blur={1.5} far={10} />
+        </Canvas>
       </div>
 
-      <div className="text-xs text-sicbo-text-muted tracking-[0.15em]">
-        Total:{" "}
-        <span
-          className="text-[#f0d080] text-2xl font-bold ml-2 inline-block min-w-[3rem] transition-all duration-300"
-          aria-live="polite"
-        >
-          {displayTotal}
-        </span>
+      <div className="mt-2 min-h-[60px] flex flex-col items-center justify-center transition-all duration-300">
+        {result?.error ? (
+          <div className="text-red-400 text-sm tracking-wider animate-pulse font-bold">
+            ⚠ {result.error}
+          </div>
+        ) : result ? (
+          <>
+            <div className="text-xs text-sicbo-text-muted tracking-[0.15em] mb-1">
+              Total:{" "}
+              <span className="text-[#f0d080] text-xl font-bold ml-1 inline-block transition-all duration-300">
+                {displayTotal}
+              </span>
+              {result.isTriple && <span className="text-red-500 ml-2">🔴 Triple!</span>}
+            </div>
+            <div
+              className={`text-2xl font-black tracking-wider transition-all duration-500 ${
+                result.won
+                  ? "text-[#f0d080] [text-shadow:0_0_24px_rgba(240,208,128,0.6)] animate-pulse"
+                  : "text-red-600/80"
+              }`}
+            >
+              {result.won ? `🎉 YOU WIN! +${result.payout}` : "✗ LOSE"}
+            </div>
+          </>
+        ) : (
+          <div className="text-xs text-sicbo-text-muted tracking-[0.15em] flex items-center justify-center h-full">
+            Total:{" "}
+            <span
+              className="text-[#f0d080] text-2xl font-bold ml-2 inline-block min-w-[3rem] transition-all duration-300"
+              aria-live="polite"
+            >
+              {displayTotal}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -297,10 +335,12 @@ DiceTray.propTypes = {
   dice: PropTypes.arrayOf(PropTypes.oneOf([1, 2, 3, 4, 5, 6])),
   rolling: PropTypes.bool,
   total: PropTypes.number,
+  result: PropTypes.object,
 };
 
 DiceTray.defaultProps = {
   dice: [1, 1, 1],
   rolling: false,
   total: null,
+  result: null,
 };

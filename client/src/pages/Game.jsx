@@ -131,7 +131,7 @@ export default function Game() {
       <BalanceBar balance={balance} lastWin={lastWin} rounds={rounds} />
 
       <div style={s.wrap}>
-        <DiceTray dice={dice} rolling={rolling} total={total} />
+        <DiceTray dice={dice} rolling={rolling} total={total} result={result} />
 
         <BetPanel
           balance={balance}
@@ -181,91 +181,6 @@ export default function Game() {
         >
           {rolling ? "🎲 Rolling..." : "🎲 ROLL THE DICE"}
         </button>
-
-        {/* Result Panel */}
-        <div style={s.resultPanel}>
-          {result?.error ? (
-            <div
-              style={{
-                color: "#ff6655",
-                fontSize: "0.8rem",
-                letterSpacing: "0.1em",
-              }}
-            >
-              ⚠ {result.error}
-            </div>
-          ) : result ? (
-            <>
-              <div
-                style={{
-                  fontSize: "0.7rem",
-                  color: "#a08050",
-                  letterSpacing: "0.15em",
-                }}
-              >
-                Dice: {result.vals?.join(" · ")} &nbsp;|&nbsp; Total:{" "}
-                {result.total}
-                {result.isTriple ? " 🔴 Triple!" : ""}
-              </div>
-              <div
-                style={{
-                  fontSize: "1.4rem",
-                  fontWeight: 700,
-                  color: result.won ? "#f0d080" : "#c0392b",
-                  textShadow: result.won
-                    ? "0 0 20px rgba(240,208,128,0.5)"
-                    : "none",
-                }}
-              >
-                {result.won ? `🎉 WIN! +${result.payout} coins` : "✗ LOSE"}
-              </div>
-              <div style={{ fontSize: "0.65rem", color: "#a08050" }}>
-                Balance: 🪙 {result.coins?.toLocaleString()}
-              </div>
-            </>
-          ) : (
-            <div
-              style={{
-                color: "#a08050",
-                fontSize: "0.7rem",
-                letterSpacing: "0.2em",
-              }}
-            >
-              Place a bet and roll the dice
-            </div>
-          )}
-        </div>
-
-        {/* History badges */}
-        <div
-          style={{
-            display: "flex",
-            gap: 6,
-            justifyContent: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          {history.map((h, i) => (
-            <span
-              key={i}
-              style={{
-                fontSize: "0.55rem",
-                padding: "3px 8px",
-                borderRadius: 20,
-                fontWeight: 700,
-                letterSpacing: "0.1em",
-                background:
-                  h === "win"
-                    ? "rgba(201,168,76,0.15)"
-                    : "rgba(192,57,43,0.15)",
-                color: h === "win" ? "#c9a84c" : "#c0392b",
-                border: `1px solid ${h === "win" ? "#8a6a1f" : "#7b1e14"}`,
-              }}
-            >
-              {h === "win" ? "✓" : "✗"}
-            </span>
-          ))}
-        </div>
 
         {/* Payout Table */}
         <div style={s.infoBox}>
